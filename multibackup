@@ -7,7 +7,8 @@
 ###
 
 # Use "~/.multibackup" as default config, if $CONFIG is not specified
-CONFIG="${CONFIG:-${HOME}/.multibackup.conf}"
+#CONFIG="${CONFIG:-${HOME}/.multibackup.conf}"
+CONFIG="${CONFIG:-multibackup.conf}"
 
 ###
 # Functions
@@ -157,6 +158,29 @@ done
 current_action="post-command"
 current_task=1
 total_tasks="${#post_commands[@]}"
+
+# Tar backup directory
+
+cd $backup_destination
+tar -zcvf ${backup_name}${timestamp}.tar.gz *
+
+### Dump backup using FTP ###
+FTP="$(which ftp)"
+DUMPFILE=${backup_name}${timestamp}.tar.gz
+$FTP -n $FTPS <<END_SCRIPT
+quote USER $FTPU
+quote PASS $FTPP
+pass
+cd $FTPD
+prompt off
+mput $DUMPFILE
+quit
+END_SCRIPT
+
+### Delete the backup archive ###
+
+rm -rf ${backup_name}${timestamp}.tar.gz
+
 
 # Iterate through post_commnads
 if [[ "${#post_commands[@]}" -ne 0 ]]; then
